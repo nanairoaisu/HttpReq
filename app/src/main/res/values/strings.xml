@@ -1,0 +1,7 @@
+<resources>
+    <string name="app_name">ICT Application for practice</string>
+    <string name="tv_weatherinfo_title">天気詳細</string>
+    <string name="tv_winfo">あ</string>
+    <string name="tv_wcity">宮城</string>
+    <string name="tv_wdesc"></string>
+</resources>
