@@ -1,7 +1,6 @@
 package com.example.ictapplicationforpractice
 
 import android.os.Bundle
-import android.util.Log
 import android.view.View
 import android.widget.AdapterView
 import android.widget.ListView
@@ -12,12 +11,8 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
-import kotlinx.serialization.SerialName
-import kotlinx.serialization.Serializable
-import kotlinx.serialization.json.*
 
-
-class MainActivity : AppCompatActivity(), AdapterView.OnItemClickListener {
+class MainActivity : AppCompatActivity(), AdapterView.OnItemClickListener{
     var cityId = ""
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -36,7 +31,7 @@ class MainActivity : AppCompatActivity(), AdapterView.OnItemClickListener {
         val from = arrayOf("name")
         val to = intArrayOf(android.R.id.text1)
         val adapter = SimpleAdapter(
-            applicationContext,
+            this,
             cityList,
             android.R.layout.simple_expandable_list_item_1,
             from,
@@ -56,42 +51,18 @@ class MainActivity : AppCompatActivity(), AdapterView.OnItemClickListener {
         onParallelGetButtonClick()
     }
 
-    val format = Json {
-        ignoreUnknownKeys = true
-    }
-
-    @Serializable
-    data class Data(
-        @SerialName("description")
-        val description: Map<String, String> = mapOf(),
-        val forecasts: List<Forecast> = listOf()
-    )
-
-    @Serializable
-    data class Forecast(
-        val telop: String = ""
-
-    )
-
-
     fun onParallelGetButtonClick() =
-        CoroutineScope(Dispatchers.Default).launch {
-            val URL = "https://weather.tsukumijima.net/api/forecast/city/${cityId}"
-            val http = HttpUtil()
-            val res = http.httpGet(URL)
-            val result = Json.parseToJsonElement(res ?: "")
-            withContext(Dispatchers.Main) {
-                val resultDeco =
-                    Json { ignoreUnknownKeys = true }.decodeFromJsonElement<Data>(result)
+    CoroutineScope(Dispatchers.Default).launch {
+        val service = HttpClient().createService()
+        val response = service.fetchCityWeather(cityId).execute()
 
-                val tvWinfo = findViewById<TextView>(R.id.tvWinfo)
-                val tvWdesc = findViewById<TextView>(R.id.tvWdesc)
-                Log.e("de", resultDeco.forecasts[0].telop.toString())
-
-                Log.e("de", resultDeco.description["headlineText"].toString())
-
-                tvWinfo.text = resultDeco.forecasts[0].telop
-                tvWdesc.text = resultDeco.description["headlineText"].toString()
+        withContext(Dispatchers.Main) {
+                response.body()?.let{
+                    val tvWinfo = findViewById<TextView>(R.id.tvWinfo)
+                    val tvWdesc = findViewById<TextView>(R.id.tvWdesc)
+                    tvWinfo.text = it.forecasts[0].telop
+                    tvWdesc.text = it.description["headlineText"].toString()
+                }
             }
         }
 }
